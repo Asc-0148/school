@@ -1,0 +1,2006 @@
+```html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 기반 개인 맞춤형 교육 코스 추천 알고리즘 시뮬레이터</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for Visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Pretendard Font -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Pretendard', 'Inter', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        /* Custom Range Slider Styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 999px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4f46e5;
+            cursor: pointer;
+            border: 3px solid #ffffff;
+            box-shadow: 0 2px 6px rgba(79, 70, 229, 0.4);
+            transition: transform 0.15s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        .math-box {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+                    <i class="fa-solid fa-brain text-lg"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 rounded-md border border-indigo-200">탐구 보고서 실험 시뮬레이터</span>
+                        <span class="text-xs text-slate-400 hidden sm:inline">TF-IDF Cosine Similarity + Rule-Based Hybrid Filtering</span>
+                    </div>
+                    <h1 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">AI 기반 학생 흥미·성취도 맞춤형 교육 코스 추천 시스템</h1>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button onclick="openCourseModal()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-all">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>새 과목/보충자료 추가</span>
+                </button>
+                <button onclick="resetToDefault()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all" title="초기 상태로 리셋">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span class="hidden sm:inline">초기화</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- LEFT PANEL: Student Profile & Algorithm Parameters (5 Columns on Large Screens) -->
+            <section class="lg:col-span-5 space-y-5">
+
+                <!-- 1. Student Interest & Expanded Career Keyword Selector Card -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-compass text-indigo-600"></i>
+                            <span>1단계: 학생 진로 희망 및 관심분야 선택</span>
+                        </h2>
+                        <span class="text-[11px] font-medium px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">TF-IDF 콘텐츠 필터링</span>
+                    </div>
+
+                    <!-- Student Name Input -->
+                    <div class="mb-4">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">학생 이름 / 분석 대상자</label>
+                        <input type="text" id="studentNameInput" value="김탐구" oninput="runRecommendationEngine()"
+                            placeholder="학생 이름을 입력하세요"
+                            class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all font-medium text-slate-800">
+                    </div>
+
+                    <!-- Category Tabs for 6 Major Fields -->
+                    <div class="mb-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                <i class="fa-solid fa-layer-group text-indigo-500"></i>
+                                <span>계열별 관심 키워드 선택 (클릭하여 추가/해제)</span>
+                            </label>
+                            <button type="button" onclick="toggleAllCategoriesView()" id="toggleCategoryViewBtn"
+                                class="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 hover:underline">
+                                전체 계열 한눈에 보기
+                            </button>
+                        </div>
+
+                        <!-- Category Filter Pills -->
+                        <div id="categoryTabsContainer" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mb-3">
+                            <!-- Rendered by JS -->
+                        </div>
+
+                        <!-- Keyword Chips Pool -->
+                        <div id="keywordChipsContainer" class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 max-h-60 overflow-y-auto custom-scrollbar">
+                            <!-- Chips populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Custom Keyword Add & Active Keywords Box -->
+                    <div class="mb-3">
+                        <div class="flex gap-1.5">
+                            <input type="text" id="customKeywordInput"
+                                onkeydown="if(event.key==='Enter'){event.preventDefault(); addCustomKeyword();}"
+                                placeholder="직접 관심 키워드 입력 후 Enter (예: 양자역학, 메타버스)"
+                                class="flex-1 px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:border-indigo-500 outline-none">
+                            <button type="button" onclick="addCustomKeyword()"
+                                class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-white hover:bg-slate-900 shrink-0 transition-all">
+                                + 키워드 추가
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Selected Keywords Summary & Raw Textarea -->
+                    <div class="p-3 rounded-xl bg-indigo-50/50 border border-indigo-100">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs font-bold text-slate-700">현재 선택된 관심 키워드</span>
+                                <span id="activeTokenCount" class="text-[11px] px-2 py-0.5 rounded-full bg-indigo-600 text-white font-bold">0개</span>
+                            </div>
+                            <button type="button" onclick="clearKeywords()" class="text-[11px] font-semibold text-rose-600 hover:underline flex items-center gap-1">
+                                <i class="fa-solid fa-trash-can text-[10px]"></i> 전체 해제
+                            </button>
+                        </div>
+                        <textarea id="studentKeywordsInput" rows="2" oninput="syncChipsFromTextarea(); runRecommendationEngine();"
+                            placeholder="위에서 관심 키워드 태그를 클릭하거나 공백으로 구분해 직접 입력하세요..."
+                            class="w-full px-3 py-2 text-xs rounded-lg bg-white border border-indigo-200/80 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-slate-800 font-medium leading-relaxed resize-none"></textarea>
+                    </div>
+                </div>
+
+                <!-- 2. Student Achievement (A-E / 5-Grade / 9-Grade) & Threshold Settings Card -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-award text-indigo-600"></i>
+                            <span>2단계: 선수 교과 성취도(5개 영역) 및 기준 설정</span>
+                        </h2>
+                        <span id="currentSystemBadge" class="text-[11px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">고교학점제 성취평가제</span>
+                    </div>
+
+                    <!-- Evaluation System Mode Switcher (3 Modes) -->
+                    <div class="mb-4">
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">평가 체계 선택</label>
+                        <div class="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+                            <button type="button" onclick="changeGradingMode('ABCDE')" id="modeBtn-ABCDE"
+                                class="py-2 px-2 rounded-lg text-xs font-bold transition-all bg-white text-indigo-700 shadow-xs border border-slate-200/60">
+                                성취도 (A~E)
+                            </button>
+                            <button type="button" onclick="changeGradingMode('GRADE5')" id="modeBtn-GRADE5"
+                                class="py-2 px-2 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">
+                                5등급제 (1~5)
+                            </button>
+                            <button type="button" onclick="changeGradingMode('GRADE9')" id="modeBtn-GRADE9"
+                                class="py-2 px-2 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">
+                                9등급제 (1~9)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Threshold Selector Box -->
+                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                <i class="fa-solid fa-flag-checkered text-indigo-600"></i>
+                                <span>심화/보충 분기 기준 (Threshold) 설정</span>
+                            </label>
+                            <span id="thresholdValueDisplay" class="text-xs font-extrabold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-200">B 이상 심화</span>
+                        </div>
+                        <div id="thresholdOptionsContainer" class="grid grid-cols-3 gap-1.5">
+                            <!-- Populated dynamically by JS based on grading mode -->
+                        </div>
+                        <p id="thresholdDescText" class="text-[11px] text-slate-500 mt-2 leading-normal">
+                            기준 충족 시 <strong>심화 선택과목(×1.25~1.35)</strong> 우대, 기준 미달 시 성취 수준에 따라 <strong>기초 보충자료(×1.45~1.65)</strong>에 단계적 가중치를 부여합니다.
+                        </p>
+                    </div>
+
+                    <!-- 5 Core Subject Segmented Grade Buttons: 국어, 수학, 사회, 과학, 정보 -->
+                    <div id="subjectGradesContainer" class="space-y-3.5">
+                        <!-- Dynamically rendered by JS -->
+                    </div>
+
+                    <!-- Mini Summary Box: Graduated Weight Lookup Table -->
+                    <div class="mt-4 pt-3.5 border-t border-slate-200/80">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                                <i class="fa-solid fa-scale-balanced text-indigo-500"></i>
+                                <span>성취수준별 단계적 가중치(Graduated Weight) 조견표</span>
+                            </span>
+                            <span class="text-[10px] font-semibold text-slate-400">차등 보정 계수</span>
+                        </div>
+                        <div id="weightLookupTableContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-center">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT PANEL: Real-time Results, Visualizations & Math Breakdown (7 Columns on Large Screens) -->
+            <section class="lg:col-span-7 space-y-6">
+
+                <!-- Student Diagnostic Summary Banner -->
+                <div class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-violet-900 rounded-2xl p-5 text-white shadow-md">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="space-y-2">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="px-2.5 py-0.5 text-[11px] font-bold bg-white/15 rounded-full backdrop-blur-sm">실시간 AI 진단 요약</span>
+                                <span id="summaryStudentName" class="text-sm font-bold text-indigo-200">김탐구 학생</span>
+                                <span id="summaryModePill" class="px-2 py-0.5 text-[11px] font-bold bg-amber-400/20 text-amber-200 border border-amber-300/30 rounded-md">성취평가제(A~E) · 기준: B 이상</span>
+                            </div>
+                            <p id="diagnosticSummaryText" class="text-sm sm:text-base font-medium text-white leading-snug">
+                                분석 결과를 불러오는 중입니다...
+                            </p>
+                            <div id="subjectSummaryBadges" class="flex flex-wrap gap-1.5 pt-1">
+                                <!-- Subject status summary badges populated by JS -->
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 shrink-0 bg-white/10 px-4 py-2.5 rounded-xl backdrop-blur-sm border border-white/10 self-start sm:self-center">
+                            <div class="text-center">
+                                <span class="block text-[10px] text-indigo-200 uppercase">선택 키워드</span>
+                                <span id="selectedKeywordCountBadge" class="text-base font-extrabold text-emerald-300">0개</span>
+                            </div>
+                            <div class="h-7 w-px bg-white/20"></div>
+                            <div class="text-center">
+                                <span class="block text-[10px] text-indigo-200 uppercase">단어 사전(Vocab)</span>
+                                <span id="vocabSizeBadge" class="text-base font-extrabold text-white">0개 토큰</span>
+                            </div>
+                            <div class="h-7 w-px bg-white/20"></div>
+                            <div class="text-center">
+                                <span class="block text-[10px] text-indigo-200 uppercase">분석 코스</span>
+                                <span id="courseCountBadge" class="text-base font-extrabold text-amber-300">26개 과정</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TOP 4 RECOMMENDATIONS GRID (Electives & Supplementary) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    
+                    <!-- Recommended Electives Top 4 -->
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex flex-col">
+                        <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                    <i class="fa-solid fa-graduation-cap"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-900">추천 고교 선택과목 Top 4</h3>
+                                    <p class="text-xs text-slate-500">2022 개정 일반·진로·융합선택 맞춤형 추천</p>
+                                </div>
+                            </div>
+                            <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700">일반·진로·융합</span>
+                        </div>
+                        <div id="topElectivesContainer" class="space-y-3 flex-1">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Recommended Supplementary Materials Top 4 -->
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 flex flex-col">
+                        <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                                    <i class="fa-solid fa-book-medical"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-900">맞춤형 보충 학습 자료 Top 4</h3>
+                                    <p class="text-xs text-slate-500">공통과목(국·수·사·과·정) 연계 기초 브릿지</p>
+                                </div>
+                            </div>
+                            <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">공통과목 보충</span>
+                        </div>
+                        <div id="topMaterialsContainer" class="space-y-3 flex-1">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- TABS: 1. Chart View | 2. Mathematical Proof & Step-by-Step | 3. Full TF-IDF Table -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                    <!-- Tab Headers -->
+                    <div class="border-b border-slate-200 bg-slate-50/70 px-4 pt-3 flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex space-x-1" role="tablist">
+                            <button onclick="switchMainTab('chart')" id="tabBtn-chart"
+                                class="px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-xl border-b-2 border-indigo-600 text-indigo-600 bg-white transition-all flex items-center gap-2">
+                                <i class="fa-solid fa-chart-column"></i>
+                                <span>알고리즘 비교 차트</span>
+                            </button>
+                            <button onclick="switchMainTab('math')" id="tabBtn-math"
+                                class="px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all flex items-center gap-2">
+                                <i class="fa-solid fa-square-root-variable"></i>
+                                <span>수식 및 산출 근거 해설</span>
+                            </button>
+                            <button onclick="switchMainTab('matrix')" id="tabBtn-matrix"
+                                class="px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all flex items-center gap-2">
+                                <i class="fa-solid fa-table"></i>
+                                <span>전체 코스 DB & 점수표</span>
+                            </button>
+                        </div>
+
+                        <!-- Filter for Chart when Chart tab is active -->
+                        <div id="chartFilterGroup" class="flex items-center gap-1 pb-2">
+                            <button onclick="setChartCategoryFilter('ALL')" id="filterBtn-ALL" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-600 text-white">전체</button>
+                            <button onclick="setChartCategoryFilter('선택과목')" id="filterBtn-선택과목" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-200/70 text-slate-600 hover:bg-slate-200">선택과목만</button>
+                            <button onclick="setChartCategoryFilter('보충자료')" id="filterBtn-보충자료" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-200/70 text-slate-600 hover:bg-slate-200">보충자료만</button>
+                        </div>
+                    </div>
+
+                    <!-- TAB 1: Interactive Chart -->
+                    <div id="tabContent-chart" class="p-5">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800">1단계 흥미 유사도(보정 전) vs 2단계 성취도·등급 가중치 보정 후 최종 점수 비교</h4>
+                                <p class="text-xs text-slate-500">성취 기준(<span class="thresholdTextInline font-semibold text-indigo-600">B 이상 심화</span>) 충족 여부에 따라 선택과목과 보충자료의 추천 순위가 어떻게 변화하는지 확인하세요.</p>
+                            </div>
+                            <div class="flex items-center gap-3 text-xs shrink-0">
+                                <span class="flex items-center gap-1.5 font-medium text-slate-600">
+                                    <span class="w-3 h-3 rounded-sm bg-slate-300 inline-block"></span>1단계: 흥미 코사인 유사도
+                                </span>
+                                <span class="flex items-center gap-1.5 font-bold text-indigo-700">
+                                    <span class="w-3 h-3 rounded-sm bg-indigo-600 inline-block"></span>2단계: 최종 하이브리드 점수
+                                </span>
+                            </div>
+                        </div>
+                        <div class="relative h-[460px] w-full">
+                            <canvas id="recommendationChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: Mathematical Formula & Step-by-Step Explanation -->
+                    <div id="tabContent-math" class="p-5 hidden space-y-5">
+                        <!-- Course selector for inspection -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-indigo-50/70 p-4 rounded-xl border border-indigo-100">
+                            <div>
+                                <span class="text-xs font-bold text-indigo-700 uppercase tracking-wider">단계별 계산 검증기</span>
+                                <h4 class="text-sm font-bold text-slate-800">특정 과목/자료의 추천 점수가 산출된 수학적 과정을 확인합니다</h4>
+                            </div>
+                            <select id="mathInspectSelect" onchange="renderMathExplanation()"
+                                class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white border border-indigo-200 text-slate-800 outline-none focus:ring-2 focus:ring-indigo-400">
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+
+                        <!-- Mathematical Formulas Block -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="math-box text-white p-4 rounded-xl shadow-inner">
+                                <div class="text-xs font-bold text-indigo-300 mb-1 flex items-center justify-between">
+                                    <span>수식 1. TF-IDF 및 코사인 유사도 (Cosine Similarity)</span>
+                                    <span class="px-2 py-0.5 bg-white/10 rounded text-[10px]">정성 데이터 매칭</span>
+                                </div>
+                                <div class="font-mono text-xs sm:text-sm bg-black/30 p-3 rounded-lg border border-white/10 my-2 overflow-x-auto">
+                                    cos(θ) = (A · B) / (‖A‖ × ‖B‖)<br>
+                                    <span class="text-slate-400 text-[11px]">= Σ(Aᵢ × Bᵢ) / (√Σ(Aᵢ²) × √Σ(Bᵢ²))</span>
+                                </div>
+                                <p class="text-xs text-slate-300 leading-relaxed">
+                                    학생 관심 키워드 벡터 <strong>A</strong>와 교육과정 키워드 벡터 <strong>B</strong> 사이의 각도를 계산합니다. 단어의 희소성을 반영한 <strong>TF-IDF 가중치</strong>를 사용하여 핵심 진로 키워드가 겹칠수록 1에 가까워집니다.
+                                </p>
+                            </div>
+
+                            <div class="math-box text-white p-4 rounded-xl shadow-inner">
+                                <div class="text-xs font-bold text-amber-300 mb-1 flex items-center justify-between">
+                                    <span>수식 2. 성취도(A~E)·등급 기반 단계적 가중치 함수 W(G, T)</span>
+                                    <span class="px-2 py-0.5 bg-white/10 rounded text-[10px]">학점제/등급제 결합</span>
+                                </div>
+                                <div class="font-mono text-xs sm:text-sm bg-black/30 p-3 rounded-lg border border-white/10 my-2 overflow-x-auto">
+                                    Final_Score = cos(θ) × W(Grade, Threshold)<br>
+                                    <span class="text-emerald-300 text-[11px]">• 기준 충족(우수/적정) : 심화 ×1.35 / ×1.25 | 보충 ×0.55 / ×0.65</span><br>
+                                    <span class="text-amber-300 text-[11px]">• 기준 미달(보충/집중) : 보충 ×1.45 / ×1.65 | 심화 ×0.95 / ×0.80</span>
+                                </div>
+                                <p class="text-xs text-slate-300 leading-relaxed">
+                                    고교학점제 성취도(A~E) 또는 내신 등급이 기준(T) 이상이면 심화 선택과목에 가중치를 부여하고, 기준 미달(특히 D·E 등 최소 성취수준 보장 지도 대상 우려 구간)일 때는 기초 보충 학습 자료를 최대 <strong>1.65배</strong> 증폭 추천합니다.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Live Calculation Walkthrough for Selected Course -->
+                        <div id="liveMathWalkthrough" class="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-4">
+                            <!-- Populated dynamically by JS -->
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: Full Course Database & Matrix Table -->
+                    <div id="tabContent-matrix" class="p-5 hidden">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800">전체 교육 과정 데이터베이스 및 실시간 스코어링 테이블</h4>
+                                <p class="text-xs text-slate-500">보고서에 표로 첨부하거나 새로운 과목을 추가해 실험 결과를 비교할 수 있습니다.</p>
+                            </div>
+                            <button onclick="openCourseModal()" class="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1">
+                                <i class="fa-solid fa-plus-circle"></i> 과목/자료 직접 추가하기
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto custom-scrollbar border border-slate-200 rounded-xl">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-100 text-slate-600 text-[11px] font-bold uppercase border-b border-slate-200">
+                                        <th class="py-2.5 px-3">구분</th>
+                                        <th class="py-2.5 px-3">과목 / 학습 자료명</th>
+                                        <th class="py-2.5 px-3">선수교과 (현재 성취도/등급)</th>
+                                        <th class="py-2.5 px-3">매칭된 키워드</th>
+                                        <th class="py-2.5 px-3 text-right">흥미 유사도</th>
+                                        <th class="py-2.5 px-3 text-center">적용 가중치</th>
+                                        <th class="py-2.5 px-3 text-right">최종 점수</th>
+                                        <th class="py-2.5 px-3 text-center">관리</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fullMatrixTableBody" class="divide-y divide-slate-200 text-xs">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal for Adding New Course / Supplementary Material -->
+    <div id="addCourseModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-fadeIn">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-folder-plus text-indigo-600"></i>
+                    <span>새로운 선택 과목 / 보충 학습 자료 추가</span>
+                </h3>
+                <button onclick="closeCourseModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 rounded-lg flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleAddCourse(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">과목명 또는 보충 학습 자료명 (2022 개정 교육과정 기준)</label>
+                    <input type="text" id="newCourseTitle" required placeholder="예: 수학과제 탐구, 인공지능 수학, 기후변화와 환경생태"
+                        class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 focus:border-indigo-500 outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">과정 구분</label>
+                        <select id="newCourseType" onchange="syncDifficultyWithType()" class="w-full px-2.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 outline-none">
+                            <option value="선택과목">선택과목</option>
+                            <option value="보충자료">보충자료</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">교육과정 분류</label>
+                        <select id="newCourseCurriculumTag" class="w-full px-2.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 outline-none">
+                            <option value="진로선택" selected>진로선택</option>
+                            <option value="일반선택">일반선택</option>
+                            <option value="융합선택">융합선택</option>
+                            <option value="공통과목 보충">공통과목 보충</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">선수 공통교과</label>
+                        <select id="newCoursePrereq" class="w-full px-2.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 outline-none">
+                            <option value="국어">국어(공통국어)</option>
+                            <option value="수학" selected>수학(공통수학)</option>
+                            <option value="사회">사회(통합사회)</option>
+                            <option value="과학">과학(통합과학)</option>
+                            <option value="정보">정보(공통정보)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">난이도 분류</label>
+                        <select id="newCourseDifficulty" class="w-full px-2.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 outline-none">
+                            <option value="심화">심화</option>
+                            <option value="기초">기초</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">핵심 특성 키워드 (공백으로 구분)</label>
+                    <textarea id="newCourseKeywords" rows="3" required
+                        placeholder="예: 인공지능 머신러닝 수리분석 행렬 통계 알고리즘 컴퓨터공학 데이터분석"
+                        class="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 focus:border-indigo-500 outline-none resize-none"></textarea>
+                    <p class="text-[11px] text-slate-400 mt-1">학생의 관심 키워드와 매칭될 수 있도록 관련 분야 단어를 4개 이상 입력해 주세요.</p>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeCourseModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200">취소</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-200">데이터베이스에 추가</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastMessage" class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg text-xs font-semibold flex items-center gap-2.5 opacity-0 pointer-events-none transition-opacity duration-300">
+        <i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+        <span id="toastText">알림 메시지</span>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        /***********************************************************************
+         * 1. INITIAL DATA: 6 CATEGORIES OF KEYWORDS & 26 HIGH SCHOOL COURSES DB
+         ***********************************************************************/
+        const KEYWORD_CATEGORIES = [
+            {
+                id: "it_ai",
+                name: "IT·AI·데이터",
+                icon: "fa-microchip",
+                keywords: ["인공지능", "머신러닝", "딥러닝", "데이터분석", "빅데이터", "데이터사이언스", "파이썬", "알고리즘", "소프트웨어", "코딩", "컴퓨터공학", "정보보안", "앱개발"]
+            },
+            {
+                id: "eng_math",
+                name: "공학·수리·로봇",
+                icon: "fa-gears",
+                keywords: ["미적분", "수리모델링", "행렬", "벡터", "기하학", "기계공학", "전자공학", "로봇공학", "반도체", "자율주행", "항공우주", "건축공학", "신소재공학"]
+            },
+            {
+                id: "sci_bio",
+                name: "자연과학·의약·바이오",
+                icon: "fa-dna",
+                keywords: ["물리학", "역학", "전자기학", "양자역학", "화학", "생명과학", "세포", "유전자", "물질대사", "생명공학", "바이오", "의학", "약학", "보건의료", "뇌과학", "환경공학"]
+            },
+            {
+                id: "econ_biz",
+                name: "경제·경영·금융·통계",
+                icon: "fa-chart-line",
+                keywords: ["경제학", "금융공학", "경영학", "확률", "통계", "투자", "재무회계", "마케팅", "무역", "창업", "사회데이터"]
+            },
+            {
+                id: "hum_soc",
+                name: "인문·사회·심리·교육",
+                icon: "fa-book-open-reader",
+                keywords: ["심리학", "상담", "교육학", "사회학", "정책학", "법학", "정치외교", "사회복지", "언론정보", "문학", "철학", "역사학", "글쓰기"]
+            },
+            {
+                id: "art_media",
+                name: "예술·미디어·콘텐츠",
+                icon: "fa-palette",
+                keywords: ["디지털미디어", "영상제작", "스토리텔링", "콘텐츠기획", "시각디자인", "미디어아트", "UX/UI디자인", "게임개발", "컴퓨터그래픽스", "문화콘텐츠"]
+            }
+        ];
+
+        const INITIAL_DEFAULT_KEYWORDS = "인공지능 머신러닝 데이터분석 파이썬 알고리즘 행렬 벡터 확률 통계 컴퓨터공학";
+
+        const INITIAL_COURSES_DB = [
+            // ================= 2022 개정 교육과정 고교 선택과목 (Electives: 19 Courses) =================
+            {
+                id: 1,
+                title: "인공지능 수학",
+                type: "선택과목",
+                curriculumTag: "진로선택",
+                prereq: "수학",
+                difficulty: "심화",
+                keywords: "인공지능 머신러닝 딥러닝 데이터분석 알고리즘 행렬 벡터 확률 통계 최적화 컴퓨터공학 소프트웨어"
+            },
+            {
+                id: 2,
+                title: "미적분Ⅱ",
+                type: "선택과목",
+                curriculumTag: "진로선택",
+                prereq: "수학",
+                difficulty: "심화",
+                keywords: "미적분 수리모델링 극한 도함수 적분 자연과학 기계공학 전자공학 로봇공학 반도체 인공지능 물리학"
+            },
+            {
+                id: 3,
+                title: "기하",
+                type: "선택과목",
+                curriculumTag: "진로선택",
+                prereq: "수학",
+                difficulty: "심화",
+                keywords: "기하학 벡터 공간도형 이차곡선 로봇공학 건축공학 항공우주 컴퓨터그래픽스 게임개발 물리학 디자인"
+            },
+            {
+                id: 4,
+                title: "확률과 통계",
+                type: "선택과목",
+                curriculumTag: "일반선택",
+                prereq: "수학",
+                difficulty: "심화",
+                keywords: "확률 통계 데이터분석 빅데이터 데이터사이언스 금융공학 경제학 계량경제 마케팅 심리학 보건의료"
+            },
+            {
+                id: 5,
+                title: "경제 수학",
+                type: "선택과목",
+                curriculumTag: "진로선택",
+                prereq: "수학",
+                difficulty: "심화",
+                keywords: "경제학 금융공학 투자 재무회계 통계 수리모델링 함수 미분 경영학 무역 데이터분석"
+            },
+            {
+                id: 6,
+                title: "인공지능 기초",
+                type: "선택과목",
+                curriculumTag: "진로선택",
+                prereq: "정보",
+                difficulty: "심화",
+                keywords: "인공지능 머신러닝 딥러닝 파이썬 알고리즘 데이터분석 컴퓨터공학 자연어처리 컴퓨터비전 로봇공학 자율주행"
+            },
+            {
+                id: 7,
+                title: "데이터 과학",
+                type: "선택과목",
+                curriculumTag: "진로선택",
+                prereq: "정보",
+                difficulty: "심화",
+                keywords: "빅데이터 데이터사이언스 데이터분석 통계 파이썬 시각화 인공지능 데이터베이스 마케팅 사회데이터 보건의료"
+            },
+            {
+                id: 8,
+                title: "소프트웨어와 생활",
+                type: "선택과목",
+                curriculumTag: "융합선택",
+                prereq: "정보",
+                difficulty: "심화",
+                keywords: "소프트웨어 코딩 파이썬 알고리즘 앱개발 웹개발 게임개발 사물인터넷 디지털미디어 정보보안 UX/UI디자인"
+            },
+            {
+                id: 9,
+                title: "역학과 에너지",
+                type: "선택과목",
+                curriculumTag: "진로선택",
+                prereq: "과학",
+                difficulty: "심화",
+                keywords: "물리학 역학 에너지 기계공학 로봇공학 항공우주 자동차공학 전자공학 건축공학 자연과학 수리모델링"
+            },
+            {
+                id: 10,
+                title: "전자기와 양자",
+                type: "선택과목",
+                curriculumTag: "진로선택",
+                prereq: "과학",
+                difficulty: "심화",
+                keywords: "물리학 전자기학 양자역학 반도체 전자공학 신소재공학 나노기술 에너지공학 광학 컴퓨터공학"
+            },
+            {
+                id: 11,
+                title: "물질과 에너지",
+                type: "선택과목",
+                curriculumTag: "진로선택",
+                prereq: "과학",
+                difficulty: "심화",
+                keywords: "화학 물질 에너지 열역학 신소재공학 화학공학 약학 바이오 환경공학 나노기술 반도체"
+            },
+            {
+                id: 12,
+                title: "세포와 물질대사",
+                type: "선택과목",
+                curriculumTag: "진로선택",
+                prereq: "과학",
+                difficulty: "심화",
+                keywords: "생명과학 세포 물질대사 생명공학 유전자 바이오 의학 약학 간호학 보건의료 뇌과학 실험"
+            },
+            {
+                id: 13,
+                title: "생물의 유전",
+                type: "선택과목",
+                curriculumTag: "진로선택",
+                prereq: "과학",
+                difficulty: "심화",
+                keywords: "생명과학 유전자 DNA 생명공학 바이오 의학 약학 진화 분자생물학 뇌과학 보건의료"
+            },
+            {
+                id: 14,
+                title: "금융과 경제생활",
+                type: "선택과목",
+                curriculumTag: "융합선택",
+                prereq: "사회",
+                difficulty: "심화",
+                keywords: "경제학 금융공학 경영학 회계 투자 시장분석 무역 마케팅 창업 정책학 사회데이터"
+            },
+            {
+                id: 15,
+                title: "사회문제 탐구",
+                type: "선택과목",
+                curriculumTag: "융합선택",
+                prereq: "사회",
+                difficulty: "심화",
+                keywords: "사회학 정책학 법학 정치외교 사회복지 언론정보 사회데이터 통계 인권 환경 도시계획"
+            },
+            {
+                id: 16,
+                title: "인간과 심리",
+                type: "선택과목",
+                curriculumTag: "진로선택",
+                prereq: "사회",
+                difficulty: "심화",
+                keywords: "심리학 상담 뇌과학 교육학 사회복지 마케팅 소비자행동 UX/UI디자인 인사조직 인간행동"
+            },
+            {
+                id: 17,
+                title: "주제 탐구 독서",
+                type: "선택과목",
+                curriculumTag: "진로선택",
+                prereq: "국어",
+                difficulty: "심화",
+                keywords: "문학 철학 역사학 교육학 언론정보 법학 비평 글쓰기 인문학 미디어 탐구보고서"
+            },
+            {
+                id: 18,
+                title: "문학과 영상",
+                type: "선택과목",
+                curriculumTag: "진로선택",
+                prereq: "국어",
+                difficulty: "심화",
+                keywords: "문학 영상제작 영화 디지털미디어 스토리텔링 콘텐츠기획 방송 언론정보 예술 비평 문화콘텐츠"
+            },
+            {
+                id: 19,
+                title: "미디어 아트",
+                type: "선택과목",
+                curriculumTag: "융합선택",
+                prereq: "국어",
+                difficulty: "심화",
+                keywords: "디지털미디어 시각디자인 미디어아트 UX/UI디자인 영상제작 게임개발 콘텐츠기획 예술 컴퓨터그래픽스"
+            },
+
+            // ================= 공통과목 연계 기초·브릿지 보충자료 (Supplementary: 7 Courses) =================
+            {
+                id: 101,
+                title: "[공통수학 브릿지] 행렬·벡터와 경우의 수 핵심 특강",
+                type: "보충자료",
+                curriculumTag: "공통수학 보충",
+                prereq: "수학",
+                difficulty: "기초",
+                keywords: "인공지능 머신러닝 데이터분석 알고리즘 행렬 벡터 확률 통계 컴퓨터공학 기하학 게임개발 경제학"
+            },
+            {
+                id: 102,
+                title: "[공통수학 브릿지] 함수와 미적분 기초 개념 클리닉",
+                type: "보충자료",
+                curriculumTag: "공통수학 보충",
+                prereq: "수학",
+                difficulty: "기초",
+                keywords: "미적분 수리모델링 극한 도함수 함수 기계공학 전자공학 로봇공학 물리학 경제학 금융공학 자연과학"
+            },
+            {
+                id: 103,
+                title: "[정보 기초] 파이썬(Python) 코딩 및 데이터 구조 입문",
+                type: "보충자료",
+                curriculumTag: "정보 보충",
+                prereq: "정보",
+                difficulty: "기초",
+                keywords: "파이썬 코딩 소프트웨어 알고리즘 데이터분석 빅데이터 인공지능 머신러닝 앱개발 웹개발 게임개발 정보보안"
+            },
+            {
+                id: 104,
+                title: "[통합과학 브릿지] 역학·전자기 물리량과 운동 법칙 기초",
+                type: "보충자료",
+                curriculumTag: "통합과학 보충",
+                prereq: "과학",
+                difficulty: "기초",
+                keywords: "물리학 역학 에너지 전자기학 반도체 기계공학 전자공학 로봇공학 항공우주 신소재공학 건축공학"
+            },
+            {
+                id: 105,
+                title: "[통합과학 브릿지] 화학 결합과 세포 생명시스템 기초 정리",
+                type: "보충자료",
+                curriculumTag: "통합과학 보충",
+                prereq: "과학",
+                difficulty: "기초",
+                keywords: "화학 생명과학 세포 유전자 물질대사 바이오 의학 약학 간호학 생명공학 화학공학 환경공학 뇌과학"
+            },
+            {
+                id: 106,
+                title: "[통합사회 브릿지] 경제 그래프 독해와 사회과학 통계 기초",
+                type: "보충자료",
+                curriculumTag: "통합사회 보충",
+                prereq: "사회",
+                difficulty: "기초",
+                keywords: "경제학 금융공학 경영학 사회학 정책학 법학 마케팅 사회데이터 통계 심리학 무역 사회복지"
+            },
+            {
+                id: 107,
+                title: "[공통국어 브릿지] 학술 비문학 독해 및 미디어 스토리텔링 기초",
+                type: "보충자료",
+                curriculumTag: "공통국어 보충",
+                prereq: "국어",
+                difficulty: "기초",
+                keywords: "문학 철학 역사학 교육학 언론정보 법학 글쓰기 영상제작 디지털미디어 스토리텔링 콘텐츠기획 시각디자인 UX/UI디자인"
+            }
+        ];
+
+        /***********************************************************************
+         * 1-B. GRADING SYSTEM CONFIGURATIONS (ABCDE / 5-Grade / 9-Grade)
+         ***********************************************************************/
+        const SUBJECT_META = [
+            { key: "국어", short: "국", desc: "공통국어 (문학·독서·미디어 기초)", badgeBg: "bg-rose-50 text-rose-600" },
+            { key: "수학", short: "수", desc: "공통수학 (미적분·기하·확통·AI수학 기초)", badgeBg: "bg-blue-50 text-blue-600" },
+            { key: "사회", short: "사", desc: "통합사회 (금융경제·사회탐구·심리 기초)", badgeBg: "bg-amber-50 text-amber-600" },
+            { key: "과학", short: "과", desc: "통합과학 (역학·전자기·물질·생명 기초)", badgeBg: "bg-emerald-50 text-emerald-600" },
+            { key: "정보", short: "정", desc: "정보 (인공지능 기초·데이터 과학·SW 기초)", badgeBg: "bg-purple-50 text-purple-600" }
+        ];
+
+        const GRADING_SYSTEMS = {
+            ABCDE: {
+                id: "ABCDE",
+                name: "성취평가제(A~E)",
+                badgeLabel: "고교학점제 성취평가제",
+                defaultThresholdRank: 2,
+                defaultSubjectRanks: { "국어": 2, "수학": 3, "사회": 2, "과학": 2, "정보": 1 },
+                levels: [
+                    { rank: 1, label: "A", value: "성취도 A", fullLabel: "성취도 A (90% 이상)" },
+                    { rank: 2, label: "B", value: "성취도 B", fullLabel: "성취도 B (80~89%)" },
+                    { rank: 3, label: "C", value: "성취도 C", fullLabel: "성취도 C (70~79%)" },
+                    { rank: 4, label: "D", value: "성취도 D", fullLabel: "성취도 D (60~69%)" },
+                    { rank: 5, label: "E", value: "성취도 E", fullLabel: "성취도 E (60% 미만)" }
+                ],
+                thresholds: [
+                    { rank: 1, label: "A 이상 심화", shortDesc: "기준: A 이상" },
+                    { rank: 2, label: "B 이상 심화(권장)", shortDesc: "기준: B 이상" },
+                    { rank: 3, label: "C 이상 심화", shortDesc: "기준: C 이상" }
+                ]
+            },
+            GRADE5: {
+                id: "GRADE5",
+                name: "5등급제(1~5등급)",
+                badgeLabel: "2022 개정 내신 5등급제",
+                defaultThresholdRank: 2,
+                defaultSubjectRanks: { "국어": 2, "수학": 3, "사회": 2, "과학": 2, "정보": 1 },
+                levels: [
+                    { rank: 1, label: "1등급", value: "1등급", fullLabel: "1등급 (상위 10%)" },
+                    { rank: 2, label: "2등급", value: "2등급", fullLabel: "2등급 (상위 34%)" },
+                    { rank: 3, label: "3등급", value: "3등급", fullLabel: "3등급 (상위 66%)" },
+                    { rank: 4, label: "4등급", value: "4등급", fullLabel: "4등급 (상위 90%)" },
+                    { rank: 5, label: "5등급", value: "5등급", fullLabel: "5등급 (하위 10%)" }
+                ],
+                thresholds: [
+                    { rank: 1, label: "1등급 심화", shortDesc: "기준: 1등급" },
+                    { rank: 2, label: "2등급 이내 심화", shortDesc: "기준: 2등급 이내" },
+                    { rank: 3, label: "3등급 이내 심화", shortDesc: "기준: 3등급 이내" }
+                ]
+            },
+            GRADE9: {
+                id: "GRADE9",
+                name: "9등급제(1~9등급)",
+                badgeLabel: "석차 9등급제",
+                defaultThresholdRank: 3,
+                defaultSubjectRanks: { "국어": 3, "수학": 5, "사회": 3, "과학": 3, "정보": 1 },
+                levels: [
+                    { rank: 1, label: "1", value: "1등급", fullLabel: "1등급 (4%)" },
+                    { rank: 2, label: "2", value: "2등급", fullLabel: "2등급 (11%)" },
+                    { rank: 3, label: "3", value: "3등급", fullLabel: "3등급 (23%)" },
+                    { rank: 4, label: "4", value: "4등급", fullLabel: "4등급 (40%)" },
+                    { rank: 5, label: "5", value: "5등급", fullLabel: "5등급 (60%)" },
+                    { rank: 6, label: "6", value: "6등급", fullLabel: "6등급 (77%)" },
+                    { rank: 7, label: "7", value: "7등급", fullLabel: "7등급 (89%)" },
+                    { rank: 8, label: "8", value: "8등급", fullLabel: "8등급 (96%)" },
+                    { rank: 9, label: "9", value: "9등급", fullLabel: "9등급 (100%)" }
+                ],
+                thresholds: [
+                    { rank: 2, label: "2등급 이내", shortDesc: "기준: 2등급 이내" },
+                    { rank: 3, label: "3등급 이내(권장)", shortDesc: "기준: 3등급 이내" },
+                    { rank: 4, label: "4등급 이내", shortDesc: "기준: 4등급 이내" },
+                    { rank: 5, label: "5등급 이내", shortDesc: "기준: 5등급 이내" }
+                ]
+            }
+        };
+
+        /***********************************************************************
+         * 2. GLOBAL APPLICATION STATE
+         ***********************************************************************/
+        let coursesDB = JSON.parse(JSON.stringify(INITIAL_COURSES_DB));
+        let activeCategoryId = "it_ai";
+        let showAllCategories = false;
+        let currentGradingMode = "ABCDE";
+        let currentThresholdRank = GRADING_SYSTEMS.ABCDE.defaultThresholdRank;
+        let studentSubjectRanks = { ...GRADING_SYSTEMS.ABCDE.defaultSubjectRanks };
+        let currentChartFilter = "ALL";
+        let chartInstance = null;
+        let latestEvaluatedCourses = [];
+        let latestMathDetails = { gradingSystemName: "성취평가제(A~E)" };
+
+        /***********************************************************************
+         * 3. CORE TF-IDF & HYBRID SCORING ENGINE
+         ***********************************************************************/
+        function tokenizeText(text) {
+            if (!text) return [];
+            return text
+                .replace(/[,.;:!?()[\]{}"']/g, " ")
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+        }
+
+        function getSubjectLevelObj(subjectKey) {
+            const sys = GRADING_SYSTEMS[currentGradingMode];
+            const rank = studentSubjectRanks[subjectKey] || sys.defaultThresholdRank;
+            return sys.levels.find(l => l.rank === rank) || sys.levels[0];
+        }
+
+        function computeGraduatedWeight(course, subjectRank, thresholdRank) {
+            const diff = subjectRank - thresholdRank;
+            const isElective = course.type === "선택과목";
+
+            if (diff < 0 || (thresholdRank === 1 && diff === 0)) {
+                if (isElective) {
+                    return {
+                        weight: 1.35,
+                        reason: "최우수 성취 심화 우대",
+                        tierName: "최우수 성취 구간",
+                        statusShort: "심화최우수",
+                        badgeClass: "bg-indigo-100 text-indigo-800 border border-indigo-200"
+                    };
+                } else {
+                    return {
+                        weight: 0.55,
+                        reason: "기초 역량 충분 (우선순위 하향)",
+                        tierName: "최우수 성취 구간",
+                        statusShort: "기초충분",
+                        badgeClass: "bg-slate-100 text-slate-600 border border-slate-200"
+                    };
+                }
+            } else if (diff === 0) {
+                if (isElective) {
+                    return {
+                        weight: 1.25,
+                        reason: "기준 충족 심화 권장",
+                        tierName: "기준 충족 구간",
+                        statusShort: "심화권장",
+                        badgeClass: "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                    };
+                } else {
+                    return {
+                        weight: 0.65,
+                        reason: "기준 충족 (보충 후순위)",
+                        tierName: "기준 충족 구간",
+                        statusShort: "기준충족",
+                        badgeClass: "bg-slate-100 text-slate-600 border border-slate-200"
+                    };
+                }
+            } else if (diff === 1) {
+                if (!isElective) {
+                    return {
+                        weight: 1.45,
+                        reason: "선수교과 보충 권장 가중",
+                        tierName: "보충 권장 구간",
+                        statusShort: "보충권장",
+                        badgeClass: "bg-amber-100 text-amber-800 border border-amber-200"
+                    };
+                } else {
+                    return {
+                        weight: 0.95,
+                        reason: "선수교과 약간 미달 (보충 병행)",
+                        tierName: "보충 권장 구간",
+                        statusShort: "보충병행",
+                        badgeClass: "bg-amber-50 text-amber-700 border border-amber-200"
+                    };
+                }
+            } else {
+                if (!isElective) {
+                    return {
+                        weight: 1.65,
+                        reason: "집중 기초 보충 최우선 추천",
+                        tierName: "집중 보충 구간",
+                        statusShort: "집중보충",
+                        badgeClass: "bg-rose-100 text-rose-800 border border-rose-200"
+                    };
+                } else {
+                    return {
+                        weight: 0.80,
+                        reason: "선수 기초 부족 (난이도 조정)",
+                        tierName: "집중 보충 구간",
+                        statusShort: "기초선행필요",
+                        badgeClass: "bg-rose-50 text-rose-700 border border-rose-200"
+                    };
+                }
+            }
+        }
+
+        function runRecommendationEngine() {
+            const studentName = document.getElementById("studentNameInput").value.trim() || "학생";
+            const rawKeywords = document.getElementById("studentKeywordsInput").value;
+            const studentTokens = tokenizeText(rawKeywords);
+
+            document.getElementById("activeTokenCount").textContent = `${studentTokens.length}개`;
+
+            const sys = GRADING_SYSTEMS[currentGradingMode];
+            const thresholdObj = sys.thresholds.find(t => t.rank === currentThresholdRank) || sys.thresholds[0];
+            latestMathDetails.gradingSystemName = sys.name;
+
+            // Build Corpus: all courses + student document
+            const courseTokenDocs = coursesDB.map(c => tokenizeText(c.keywords));
+            const allDocs = [...courseTokenDocs, studentTokens];
+            const N = allDocs.length;
+
+            // Vocabulary set
+            const vocabSet = new Set();
+            allDocs.forEach(doc => doc.forEach(t => vocabSet.add(t)));
+            const vocab = Array.from(vocabSet);
+
+            // Compute smooth IDF: ln((1 + N) / (1 + df)) + 1
+            const idfMap = {};
+            vocab.forEach(term => {
+                let df = 0;
+                allDocs.forEach(doc => {
+                    if (doc.includes(term)) df++;
+                });
+                idfMap[term] = Math.log((1 + N) / (1 + df)) + 1;
+            });
+
+            // Helper to compute L2-normalized TF-IDF vector
+            function computeNormalizedTfIdf(tokens) {
+                const tfMap = {};
+                tokens.forEach(t => {
+                    tfMap[t] = (tfMap[t] || 0) + 1;
+                });
+                const vec = {};
+                let normSq = 0;
+                Object.keys(tfMap).forEach(t => {
+                    const val = tfMap[t] * (idfMap[t] || 1);
+                    vec[t] = val;
+                    normSq += val * val;
+                });
+                const norm = Math.sqrt(normSq);
+                if (norm > 0) {
+                    Object.keys(vec).forEach(t => {
+                        vec[t] = vec[t] / norm;
+                    });
+                }
+                return vec;
+            }
+
+            const studentVec = computeNormalizedTfIdf(studentTokens);
+
+            latestEvaluatedCourses = coursesDB.map((course, idx) => {
+                const cTokens = courseTokenDocs[idx];
+                const courseVec = computeNormalizedTfIdf(cTokens);
+
+                let dotProduct = 0;
+                const matchedTerms = [];
+                const termContributions = [];
+
+                Object.keys(studentVec).forEach(term => {
+                    if (courseVec[term]) {
+                        const sW = studentVec[term];
+                        const cW = courseVec[term];
+                        const contrib = sW * cW;
+                        dotProduct += contrib;
+                        matchedTerms.push(term);
+                        termContributions.push({
+                            term,
+                            idf: idfMap[term],
+                            sWeight: sW,
+                            cWeight: cW,
+                            contribution: contrib
+                        });
+                    }
+                });
+
+                termContributions.sort((a, b) => b.contribution - a.contribution);
+
+                const interestSimilarity = Math.max(0, Math.min(1, dotProduct));
+                const prereqLevelObj = getSubjectLevelObj(course.prereq);
+                const weightInfo = computeGraduatedWeight(course, prereqLevelObj.rank, currentThresholdRank);
+                const finalScore = interestSimilarity > 0 ? interestSimilarity * weightInfo.weight : 0;
+
+                return {
+                    ...course,
+                    interestSimilarity,
+                    weight: weightInfo.weight,
+                    weightReason: weightInfo.reason,
+                    tierName: weightInfo.tierName,
+                    statusShort: weightInfo.statusShort,
+                    badgeClass: weightInfo.badgeClass,
+                    finalScore,
+                    matchedTerms,
+                    termContributions,
+                    prereqRank: prereqLevelObj.rank,
+                    prereqLevelLabel: prereqLevelObj.label,
+                    prereqFullLabel: prereqLevelObj.fullLabel,
+                    thresholdLabel: thresholdObj.label
+                };
+            });
+
+            updateSummaryBanner(studentName, sys, thresholdObj, vocab.length, studentTokens.length);
+            renderTopCards(latestEvaluatedCourses);
+            updateChartVisualization(latestEvaluatedCourses);
+            populateMathInspectorDropdown(latestEvaluatedCourses);
+            renderMathExplanation();
+            renderFullMatrixTable(latestEvaluatedCourses);
+        }
+
+        /***********************************************************************
+         * 4-A. STEP 1 KEYWORD CATEGORY TABS & CHIPS UI
+         ***********************************************************************/
+        function renderCategoryTabs() {
+            const container = document.getElementById("categoryTabsContainer");
+            const activeTokens = new Set(tokenizeText(document.getElementById("studentKeywordsInput").value));
+
+            container.innerHTML = KEYWORD_CATEGORIES.map(cat => {
+                const selectedCount = cat.keywords.filter(k => activeTokens.has(k)).length;
+                const isActive = !showAllCategories && activeCategoryId === cat.id;
+
+                return `
+                    <button type="button" onclick="selectCategoryTab('${cat.id}')"
+                        class="flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold border transition-all ${
+                            isActive
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/40'
+                        }">
+                        <span class="flex items-center gap-1.5 truncate">
+                            <i class="fa-solid ${cat.icon} text-[11px] ${isActive ? 'text-indigo-200' : 'text-indigo-500'}"></i>
+                            <span class="truncate">${cat.name}</span>
+                        </span>
+                        ${selectedCount > 0 ? `<span class="ml-1 px-1.5 py-0.2 rounded-full text-[10px] ${isActive ? 'bg-white text-indigo-700' : 'bg-indigo-100 text-indigo-700'}">${selectedCount}</span>` : ''}
+                    </button>
+                `;
+            }).join("");
+        }
+
+        function selectCategoryTab(catId) {
+            activeCategoryId = catId;
+            showAllCategories = false;
+            document.getElementById("toggleCategoryViewBtn").textContent = "전체 계열 한눈에 보기";
+            renderCategoryTabs();
+            renderKeywordChips();
+        }
+
+        function toggleAllCategoriesView() {
+            showAllCategories = !showAllCategories;
+            document.getElementById("toggleCategoryViewBtn").textContent = showAllCategories
+                ? "계열별 탭으로 접기"
+                : "전체 계열 한눈에 보기";
+            renderCategoryTabs();
+            renderKeywordChips();
+        }
+
+        function renderKeywordChips() {
+            const container = document.getElementById("keywordChipsContainer");
+            const activeTokens = new Set(tokenizeText(document.getElementById("studentKeywordsInput").value));
+
+            if (showAllCategories) {
+                container.innerHTML = KEYWORD_CATEGORIES.map(cat => `
+                    <div class="mb-3 last:mb-0">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                                <i class="fa-solid ${cat.icon} text-indigo-500"></i> ${cat.name}
+                            </span>
+                            <button type="button" onclick="selectAllInCategory('${cat.id}')" class="text-[10px] font-semibold text-indigo-600 hover:underline">
+                                + 이 계열 전체 추가
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${cat.keywords.map(k => createChipButtonHTML(k, activeTokens.has(k))).join("")}
+                        </div>
+                    </div>
+                `).join("");
+            } else {
+                const cat = KEYWORD_CATEGORIES.find(c => c.id === activeCategoryId) || KEYWORD_CATEGORIES[0];
+                container.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                            <i class="fa-solid ${cat.icon} text-indigo-600"></i>
+                            <span>${cat.name} 핵심 키워드 (${cat.keywords.length}개)</span>
+                        </span>
+                        <button type="button" onclick="selectAllInCategory('${cat.id}')"
+                            class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline">
+                            + 이 계열 전체 선택
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        ${cat.keywords.map(k => createChipButtonHTML(k, activeTokens.has(k))).join("")}
+                    </div>
+                `;
+            }
+        }
+
+        function getCurriculumTagBadgeHTML(tag) {
+            const label = tag || "진로선택";
+            if (label === "일반선택") {
+                return `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-sky-50 text-sky-700 border border-sky-200 shrink-0">${label}</span>`;
+            } else if (label === "진로선택") {
+                return `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0">${label}</span>`;
+            } else if (label === "융합선택") {
+                return `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-purple-50 text-purple-700 border border-purple-200 shrink-0">${label}</span>`;
+            } else {
+                return `<span class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-50 text-amber-800 border border-amber-200 shrink-0">${label}</span>`;
+            }
+        }
+
+        function createChipButtonHTML(tag, isSelected) {
+            return `
+                <button type="button" onclick="toggleKeywordChip('${tag}')"
+                    class="px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                        isSelected
+                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/40'
+                    }">
+                    #${tag}
+                </button>
+            `;
+        }
+
+        function toggleKeywordChip(tag) {
+            const textarea = document.getElementById("studentKeywordsInput");
+            let tokens = tokenizeText(textarea.value);
+            if (tokens.includes(tag)) {
+                tokens = tokens.filter(t => t !== tag);
+            } else {
+                tokens.push(tag);
+            }
+            textarea.value = tokens.join(" ");
+            renderCategoryTabs();
+            renderKeywordChips();
+            runRecommendationEngine();
+        }
+
+        function selectAllInCategory(catId) {
+            const cat = KEYWORD_CATEGORIES.find(c => c.id === catId);
+            if (!cat) return;
+            const textarea = document.getElementById("studentKeywordsInput");
+            const tokenSet = new Set(tokenizeText(textarea.value));
+            cat.keywords.forEach(k => tokenSet.add(k));
+            textarea.value = Array.from(tokenSet).join(" ");
+            renderCategoryTabs();
+            renderKeywordChips();
+            runRecommendationEngine();
+            showToast(`[${cat.name}] 계열 키워드가 모두 추가되었습니다.`);
+        }
+
+        function addCustomKeyword() {
+            const input = document.getElementById("customKeywordInput");
+            const newWords = tokenizeText(input.value);
+            if (newWords.length === 0) return;
+
+            const textarea = document.getElementById("studentKeywordsInput");
+            const tokenSet = new Set(tokenizeText(textarea.value));
+            newWords.forEach(w => tokenSet.add(w));
+
+            textarea.value = Array.from(tokenSet).join(" ");
+            input.value = "";
+            renderCategoryTabs();
+            renderKeywordChips();
+            runRecommendationEngine();
+            showToast(`키워드 '${newWords.join(", ")}' 추가 완료!`);
+        }
+
+        function syncChipsFromTextarea() {
+            renderCategoryTabs();
+            renderKeywordChips();
+        }
+
+        function clearKeywords() {
+            document.getElementById("studentKeywordsInput").value = "";
+            renderCategoryTabs();
+            renderKeywordChips();
+            runRecommendationEngine();
+            showToast("모든 관심 키워드가 해제되었습니다.");
+        }
+
+        /***********************************************************************
+         * 4-B. STEP 2 GRADING MODE, THRESHOLD & SUBJECT BUTTONS UI
+         ***********************************************************************/
+        function changeGradingMode(modeKey) {
+            if (!GRADING_SYSTEMS[modeKey]) return;
+            const prevSys = GRADING_SYSTEMS[currentGradingMode];
+            const nextSys = GRADING_SYSTEMS[modeKey];
+
+            // Map existing student ranks proportionally when switching between 5-level and 9-level systems
+            const newRanks = {};
+            SUBJECT_META.forEach(sub => {
+                const oldRank = studentSubjectRanks[sub.key] || 2;
+                if (prevSys.levels.length === nextSys.levels.length) {
+                    newRanks[sub.key] = oldRank;
+                } else if (nextSys.id === "GRADE9") {
+                    // 5 levels -> 9 levels approximate mapping (1->1, 2->3, 3->5, 4->7, 5->8)
+                    const map5to9 = { 1: 1, 2: 3, 3: 5, 4: 7, 5: 8 };
+                    newRanks[sub.key] = map5to9[oldRank] || 3;
+                } else {
+                    // 9 levels -> 5 levels approximate mapping
+                    newRanks[sub.key] = Math.min(5, Math.max(1, Math.ceil(oldRank / 2)));
+                }
+            });
+
+            currentGradingMode = modeKey;
+            studentSubjectRanks = newRanks;
+            currentThresholdRank = nextSys.defaultThresholdRank;
+
+            // Update Mode Tab Buttons
+            ["ABCDE", "GRADE5", "GRADE9"].forEach(m => {
+                const btn = document.getElementById(`modeBtn-${m}`);
+                if (m === modeKey) {
+                    btn.className = "py-2 px-2 rounded-lg text-xs font-bold transition-all bg-white text-indigo-700 shadow-xs border border-slate-200/60";
+                } else {
+                    btn.className = "py-2 px-2 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900";
+                }
+            });
+
+            document.getElementById("currentSystemBadge").textContent = nextSys.badgeLabel;
+
+            renderStep2GradingUI();
+            runRecommendationEngine();
+            showToast(`평가 체계가 [${nextSys.name}] 모드로 전환되었습니다.`);
+        }
+
+        function setThresholdRank(rank) {
+            currentThresholdRank = rank;
+            renderStep2GradingUI();
+            runRecommendationEngine();
+        }
+
+        function setSubjectGradeRank(subjectKey, rank) {
+            studentSubjectRanks[subjectKey] = rank;
+            renderStep2GradingUI();
+            runRecommendationEngine();
+        }
+
+        function renderStep2GradingUI() {
+            const sys = GRADING_SYSTEMS[currentGradingMode];
+            const activeThresholdObj = sys.thresholds.find(t => t.rank === currentThresholdRank) || sys.thresholds[0];
+
+            // 1. Update Threshold Display & Inline Labels
+            document.getElementById("thresholdValueDisplay").textContent = activeThresholdObj.label;
+            document.querySelectorAll(".thresholdTextInline").forEach(el => {
+                el.textContent = `${sys.name} · ${activeThresholdObj.shortDesc}`;
+            });
+
+            // 2. Render Threshold Selection Buttons
+            const thresholdContainer = document.getElementById("thresholdOptionsContainer");
+            const colClass = sys.thresholds.length === 4 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3";
+            thresholdContainer.className = `grid ${colClass} gap-1.5`;
+
+            thresholdContainer.innerHTML = sys.thresholds.map(t => {
+                const isSelected = t.rank === currentThresholdRank;
+                return `
+                    <button type="button" onclick="setThresholdRank(${t.rank})"
+                        class="py-1.5 px-2 rounded-lg text-xs font-bold transition-all border ${
+                            isSelected
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                                : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/40'
+                        }">
+                        ${t.label}
+                    </button>
+                `;
+            }).join("");
+
+            // 3. Render 5 Core Subjects Segmented Grade Buttons
+            const subjectsContainer = document.getElementById("subjectGradesContainer");
+            subjectsContainer.innerHTML = SUBJECT_META.map(sub => {
+                const currentRank = studentSubjectRanks[sub.key];
+                const levelObj = getSubjectLevelObj(sub.key);
+                const diff = currentRank - currentThresholdRank;
+
+                let statusBadgeHtml = "";
+                if (diff < 0 || (currentThresholdRank === 1 && diff === 0)) {
+                    statusBadgeHtml = `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">심화 최우수 (선택 ×1.35)</span>`;
+                } else if (diff === 0) {
+                    statusBadgeHtml = `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">심화 권장 (선택 ×1.25)</span>`;
+                } else if (diff === 1) {
+                    statusBadgeHtml = `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">보충 권장 (보충 ×1.45)</span>`;
+                } else {
+                    statusBadgeHtml = `<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200">집중 보충 (보충 ×1.65)</span>`;
+                }
+
+                const buttonsHtml = sys.levels.map(lv => {
+                    const isSelected = lv.rank === currentRank;
+                    const isPass = lv.rank <= currentThresholdRank;
+                    let activeStyle = "";
+                    if (isSelected) {
+                        activeStyle = isPass
+                            ? "bg-indigo-600 text-white border-indigo-600 shadow-xs font-extrabold"
+                            : "bg-amber-500 text-white border-amber-500 shadow-xs font-extrabold";
+                    } else {
+                        activeStyle = "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 font-semibold";
+                    }
+
+                    return `
+                        <button type="button" onclick="setSubjectGradeRank('${sub.key}', ${lv.rank})"
+                            class="flex-1 py-1.5 px-1 rounded-lg text-xs border transition-all ${activeStyle}">
+                            ${lv.label}
+                        </button>
+                    `;
+                }).join("");
+
+                return `
+                    <div class="p-2.5 rounded-xl bg-slate-50/70 border border-slate-200/70">
+                        <div class="flex flex-wrap justify-between items-center gap-1 mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-lg ${sub.badgeBg} flex items-center justify-center text-xs font-bold">${sub.short}</span>
+                                <div>
+                                    <span class="text-xs font-bold text-slate-800">${sub.key}</span>
+                                    <span class="text-[11px] text-slate-400 ml-1 hidden sm:inline">${sub.desc}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                ${statusBadgeHtml}
+                                <span class="text-xs font-extrabold text-slate-900 min-w-[38px] text-right">${levelObj.value}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            ${buttonsHtml}
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            // 4. Render Graduated Weight Lookup Table Mini Box
+            renderWeightLookupSummary(sys);
+        }
+
+        function renderWeightLookupSummary(sys) {
+            const container = document.getElementById("weightLookupTableContainer");
+            const tRank = currentThresholdRank;
+
+            const topLevels = sys.levels.filter(l => l.rank < tRank || (tRank === 1 && l.rank === 1)).map(l => l.label).join("·") || "-";
+            const passLevels = tRank === 1 ? "-" : sys.levels.filter(l => l.rank === tRank).map(l => l.label).join("·");
+            const warnLevels = sys.levels.filter(l => l.rank === tRank + 1).map(l => l.label).join("·") || "-";
+            const lowLevels = sys.levels.filter(l => l.rank >= tRank + 2).map(l => l.label).join("·") || "-";
+
+            container.innerHTML = `
+                <div class="p-2 rounded-lg bg-indigo-50/70 border border-indigo-100">
+                    <div class="text-[10px] font-bold text-indigo-800">최우수 (${topLevels})</div>
+                    <div class="text-[11px] font-extrabold text-indigo-600 mt-0.5">선택 ×1.35</div>
+                    <div class="text-[10px] text-slate-500">보충 ×0.55</div>
+                </div>
+                <div class="p-2 rounded-lg bg-emerald-50/70 border border-emerald-100">
+                    <div class="text-[10px] font-bold text-emerald-800">기준충족 (${passLevels})</div>
+                    <div class="text-[11px] font-extrabold text-emerald-600 mt-0.5">선택 ×1.25</div>
+                    <div class="text-[10px] text-slate-500">보충 ×0.65</div>
+                </div>
+                <div class="p-2 rounded-lg bg-amber-50/70 border border-amber-100">
+                    <div class="text-[10px] font-bold text-amber-800">보충권장 (${warnLevels})</div>
+                    <div class="text-[11px] font-extrabold text-amber-600 mt-0.5">보충 ×1.45</div>
+                    <div class="text-[10px] text-slate-500">선택 ×0.95</div>
+                </div>
+                <div class="p-2 rounded-lg bg-rose-50/70 border border-rose-100">
+                    <div class="text-[10px] font-bold text-rose-800">집중보충 (${lowLevels})</div>
+                    <div class="text-[11px] font-extrabold text-rose-600 mt-0.5">보충 ×1.65</div>
+                    <div class="text-[10px] text-slate-500">선택 ×0.80</div>
+                </div>
+            `;
+        }
+
+        function updateSummaryBanner(studentName, sys, thresholdObj, vocabCount, selectedKeywordsCount) {
+            document.getElementById("summaryStudentName").textContent = `${studentName} 학생`;
+            document.getElementById("summaryModePill").textContent = `${sys.name} · ${thresholdObj.shortDesc}`;
+            document.getElementById("selectedKeywordCountBadge").textContent = `${selectedKeywordsCount}개`;
+            document.getElementById("vocabSizeBadge").textContent = `${vocabCount}개 토큰`;
+            document.getElementById("courseCountBadge").textContent = `${coursesDB.length}개 과정`;
+
+            const passSubjects = [];
+            const weakSubjects = [];
+            const badgeHtmlList = [];
+
+            SUBJECT_META.forEach(sub => {
+                const lv = getSubjectLevelObj(sub.key);
+                const isPass = lv.rank <= currentThresholdRank;
+                if (isPass) {
+                    passSubjects.push(`${sub.key}(${lv.value})`);
+                    badgeHtmlList.push(`<span class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-emerald-400/20 text-emerald-200 border border-emerald-300/30">${sub.key}: ${lv.value} (심화권장)</span>`);
+                } else {
+                    weakSubjects.push(`${sub.key}(${lv.value})`);
+                    badgeHtmlList.push(`<span class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-rose-400/25 text-amber-200 border border-amber-300/40">${sub.key}: ${lv.value} (보충권장)</span>`);
+                }
+            });
+
+            document.getElementById("subjectSummaryBadges").innerHTML = badgeHtmlList.join("");
+
+            let summaryHtml = "";
+            if (weakSubjects.length > 0) {
+                summaryHtml = `선수 교과 중 <span class="text-amber-300 font-bold underline decoration-amber-400/60">${weakSubjects.join(", ")}</span>이 기준(${thresholdObj.label}) 미달이므로, 진로 연계 선택 과목과 함께 <strong>해당 교과의 기초 보충 학습 자료에 ×1.45~×1.65 가중치</strong>를 부여하여 우선 추천합니다.`;
+            } else {
+                summaryHtml = `5대 주요 교과(${passSubjects.join(", ")}) 모두 기준(${thresholdObj.label})을 충족합니다! <strong>심화 선택 과목에 ×1.25~×1.35 가중치</strong>를 부여하고 기초 보충 자료의 우선순위는 낮추었습니다.`;
+            }
+            document.getElementById("diagnosticSummaryText").innerHTML = summaryHtml;
+        }
+
+        function renderTopCards(evaluated) {
+            const electives = evaluated
+                .filter(c => c.type === "선택과목")
+                .sort((a, b) => b.finalScore - a.finalScore)
+                .slice(0, 4);
+
+            const materials = evaluated
+                .filter(c => c.type === "보충자료")
+                .sort((a, b) => b.finalScore - a.finalScore)
+                .slice(0, 4);
+
+            document.getElementById("topElectivesContainer").innerHTML = electives.map((item, idx) => createCourseCardHTML(item, idx + 1, "indigo")).join("");
+            document.getElementById("topMaterialsContainer").innerHTML = materials.map((item, idx) => createCourseCardHTML(item, idx + 1, "amber")).join("");
+        }
+
+        function createCourseCardHTML(item, rank, colorTheme) {
+            const maxPossibleScore = 1.25;
+            const simWidth = Math.min(100, Math.round((item.interestSimilarity / maxPossibleScore) * 100));
+            const finalWidth = Math.min(100, Math.round((item.finalScore / maxPossibleScore) * 100));
+
+            const rankColors = [
+                "bg-slate-900 text-white",
+                "bg-slate-200 text-slate-800",
+                "bg-slate-100 text-slate-700",
+                "bg-slate-100 text-slate-500"
+            ];
+
+            const matchedBadges = item.matchedTerms.length > 0
+                ? item.matchedTerms.map(t => `<span class="px-1.5 py-0.5 text-[10px] font-semibold rounded bg-indigo-50 text-indigo-700">#${t}</span>`).join("")
+                : `<span class="text-[11px] text-slate-400">일치하는 키워드 없음</span>`;
+
+            const isPass = item.prereqRank <= currentThresholdRank;
+            const prereqStatusClass = isPass
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : "bg-amber-50 text-amber-800 border-amber-200";
+
+            return `
+                <div onclick="inspectCourseInMathTab(${item.id})"
+                    class="group p-3.5 rounded-xl border border-slate-200 hover:border-indigo-400 bg-slate-50/40 hover:bg-white transition-all cursor-pointer shadow-2xs hover:shadow-md">
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="w-5 h-5 rounded-md text-[11px] font-extrabold flex items-center justify-center shrink-0 ${rankColors[rank - 1] || rankColors[3]}">${rank}</span>
+                            ${getCurriculumTagBadgeHTML(item.curriculumTag)}
+                            <h4 class="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">${item.title}</h4>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border shrink-0 ${prereqStatusClass}">
+                            선수: ${item.prereq} (${item.prereqLevelLabel} · ${item.statusShort})
+                        </span>
+                    </div>
+
+                    <div class="flex flex-wrap gap-1 mb-2.5">
+                        ${matchedBadges}
+                    </div>
+
+                    <div class="flex items-center justify-between text-[11px] mb-2">
+                        <span class="font-semibold px-2 py-0.5 rounded-md ${item.badgeClass}">
+                            가중치 ×${item.weight.toFixed(2)} (${item.weightReason})
+                        </span>
+                        <span class="text-[10px] text-indigo-600 font-semibold group-hover:underline shrink-0 ml-1">산출 근거 →</span>
+                    </div>
+
+                    <div class="space-y-1 bg-white p-2 rounded-lg border border-slate-100">
+                        <div class="flex items-center justify-between text-[11px]">
+                            <span class="text-slate-500">1단계 흥미 유사도 (cos θ)</span>
+                            <span class="font-mono font-bold text-slate-700">${item.interestSimilarity.toFixed(4)}</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="h-full bg-slate-400 rounded-full transition-all duration-300" style="width: ${simWidth}%"></div>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs pt-0.5">
+                            <span class="font-bold text-slate-800">2단계 최종 추천 점수</span>
+                            <span class="font-mono font-extrabold text-xs sm:text-sm ${colorTheme === 'indigo' ? 'text-indigo-600' : 'text-amber-600'}">${item.finalScore.toFixed(4)}</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="h-full ${colorTheme === 'indigo' ? 'bg-indigo-600' : 'bg-amber-500'} rounded-full transition-all duration-300" style="width: ${finalWidth}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        /***********************************************************************
+         * 5. CHART.JS INTERACTIVE VISUALIZATION (Horizontal Comparison Chart)
+         ***********************************************************************/
+        function setChartCategoryFilter(category) {
+            currentChartFilter = category;
+            ["ALL", "선택과목", "보충자료"].forEach(cat => {
+                const btn = document.getElementById(`filterBtn-${cat}`);
+                if (cat === category) {
+                    btn.className = "px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-600 text-white";
+                } else {
+                    btn.className = "px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-200/70 text-slate-600 hover:bg-slate-200";
+                }
+            });
+            updateChartVisualization(latestEvaluatedCourses);
+        }
+
+        function updateChartVisualization(evaluated) {
+            const ctx = document.getElementById("recommendationChart").getContext("2d");
+
+            let filtered = [...evaluated];
+            if (currentChartFilter !== "ALL") {
+                filtered = filtered.filter(c => c.type === currentChartFilter);
+            }
+
+            // Sort by finalScore descending and take top 12 for clean horizontal bar display
+            filtered.sort((a, b) => b.finalScore - a.finalScore);
+            const displayItems = filtered.slice(0, 12);
+
+            const labels = displayItems.map(c => `[${c.curriculumTag || c.type}·${c.prereq}(${c.prereqLevelLabel})] ${c.title}`);
+            const baseSimData = displayItems.map(c => c.interestSimilarity);
+            const finalScoreData = displayItems.map(c => c.finalScore);
+            const finalColors = displayItems.map(c => c.type === "선택과목" ? "rgba(79, 70, 229, 0.88)" : "rgba(245, 158, 11, 0.88)");
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: "1단계: 흥미 코사인 유사도 (보정 전)",
+                            data: baseSimData,
+                            backgroundColor: "rgba(148, 163, 184, 0.55)",
+                            borderColor: "rgba(100, 116, 139, 1)",
+                            borderWidth: 1,
+                            borderRadius: 5
+                        },
+                        {
+                            label: "2단계: 최종 하이브리드 추천 점수 (성취도 가중치 보정 후)",
+                            data: finalScoreData,
+                            backgroundColor: finalColors,
+                            borderRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: "y",
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: "index",
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                afterBody: function(context) {
+                                    const idx = context[0].dataIndex;
+                                    const item = displayItems[idx];
+                                    return [
+                                        `교육과정 분류: ${item.curriculumTag || item.type}`,
+                                        `선수교과 성취수준: ${item.prereq} (${item.prereqFullLabel} · ${item.statusShort})`,
+                                        `적용 가중치: ×${item.weight.toFixed(2)} (${item.weightReason})`,
+                                        `매칭 키워드: ${item.matchedTerms.join(", ") || "없음"}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: "추천 점수 (Score)",
+                                font: { family: "Pretendard", size: 11, weight: "bold" }
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                font: { family: "Pretendard", size: 11, weight: "600" }
+                            },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        /***********************************************************************
+         * 6. STEP-BY-STEP MATHEMATICAL EXPLANATION & FULL TABLE VIEW
+         ***********************************************************************/
+        function populateMathInspectorDropdown(evaluated) {
+            const select = document.getElementById("mathInspectSelect");
+            const currentVal = select.value;
+            const sorted = [...evaluated].sort((a, b) => b.finalScore - a.finalScore);
+
+            select.innerHTML = sorted.map(c =>
+                `<option value="${c.id}">[${c.curriculumTag || c.type}] ${c.title} (선수:${c.prereq} ${c.prereqLevelLabel} | 최종:${c.finalScore.toFixed(4)})</option>`
+            ).join("");
+
+            if (currentVal && sorted.some(c => String(c.id) === String(currentVal))) {
+                select.value = currentVal;
+            }
+        }
+
+        function inspectCourseInMathTab(courseId) {
+            switchMainTab("math");
+            const select = document.getElementById("mathInspectSelect");
+            select.value = String(courseId);
+            renderMathExplanation();
+        }
+
+        function renderMathExplanation() {
+            const select = document.getElementById("mathInspectSelect");
+            const selectedId = parseInt(select.value, 10);
+            const item = latestEvaluatedCourses.find(c => c.id === selectedId) || latestEvaluatedCourses[0];
+            if (!item) return;
+
+            const container = document.getElementById("liveMathWalkthrough");
+
+            const contribRows = item.termContributions.length > 0
+                ? item.termContributions.map(tc => `
+                    <tr class="border-b border-slate-200/70 text-xs">
+                        <td class="py-1.5 px-2 font-bold text-indigo-700">#${tc.term}</td>
+                        <td class="py-1.5 px-2 font-mono text-right">${tc.idf.toFixed(4)}</td>
+                        <td class="py-1.5 px-2 font-mono text-right">${tc.sWeight.toFixed(4)}</td>
+                        <td class="py-1.5 px-2 font-mono text-right">${tc.cWeight.toFixed(4)}</td>
+                        <td class="py-1.5 px-2 font-mono font-bold text-right text-slate-900">${tc.contribution.toFixed(4)}</td>
+                    </tr>
+                `).join("")
+                : `<tr><td colspan="5" class="py-3 text-center text-xs text-slate-400">학생의 관심 키워드와 겹치는 단어가 없어 내적(Dot Product) 결과가 0입니다.</td></tr>`;
+
+            container.innerHTML = `
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="text-xs font-bold px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">${item.type}</span>
+                        ${getCurriculumTagBadgeHTML(item.curriculumTag)}
+                        <span class="text-base font-extrabold text-slate-900 ml-1">${item.title}</span>
+                    </div>
+                    <div class="text-xs font-mono bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+                        <strong>최종 식:</strong> ${item.interestSimilarity.toFixed(4)} (유사도) × ${item.weight.toFixed(2)} (성취가중치) = <span class="text-indigo-600 font-extrabold">${item.finalScore.toFixed(4)}</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Step 1 Breakdown -->
+                    <div class="bg-white p-3.5 rounded-xl border border-slate-200">
+                        <h5 class="text-xs font-bold text-slate-700 mb-2 flex items-center justify-between">
+                            <span>[1단계] 공통 키워드 TF-IDF 벡터 내적 상세</span>
+                            <span class="font-mono text-indigo-600">cos(θ) = ${item.interestSimilarity.toFixed(4)}</span>
+                        </h5>
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-[11px] text-slate-500 border-b border-slate-200">
+                                    <th class="py-1 px-2">일치 키워드</th>
+                                    <th class="py-1 px-2 text-right">IDF</th>
+                                    <th class="py-1 px-2 text-right">학생 벡터(Aᵢ)</th>
+                                    <th class="py-1 px-2 text-right">과목 벡터(Bᵢ)</th>
+                                    <th class="py-1 px-2 text-right">곱(Aᵢ×Bᵢ)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${contribRows}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Step 2 Breakdown -->
+                    <div class="bg-white p-3.5 rounded-xl border border-slate-200 flex flex-col justify-between">
+                        <div>
+                            <h5 class="text-xs font-bold text-slate-700 mb-2">[2단계] 선수 교과 성취도/등급 단계적 가중치 판정</h5>
+                            <ul class="text-xs space-y-2 text-slate-600">
+                                <li class="flex justify-between py-1 border-b border-slate-100">
+                                    <span>적용 평가 체계 및 기준:</span>
+                                    <strong class="text-indigo-700">${latestMathDetails.gradingSystemName} (${item.thresholdLabel})</strong>
+                                </li>
+                                <li class="flex justify-between py-1 border-b border-slate-100">
+                                    <span>교육과정 분류 및 선수 공통교과:</span>
+                                    <strong class="text-slate-900">${item.curriculumTag || item.type} · ${item.prereq} (${item.difficulty})</strong>
+                                </li>
+                                <li class="flex justify-between py-1 border-b border-slate-100">
+                                    <span>학생의 ${item.prereq} 성취수준:</span>
+                                    <strong class="text-slate-900">${item.prereqFullLabel} (${item.tierName})</strong>
+                                </li>
+                                <li class="flex justify-between py-1">
+                                    <span>판정 결과 및 적용 가중치:</span>
+                                    <span class="font-bold px-2 py-0.5 rounded ${item.badgeClass}">×${item.weight.toFixed(2)} (${item.weightReason})</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="mt-3 p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700">
+                            <strong>탐구 보고서 해석 팁:</strong> 텍스트 유사도는 <strong>${item.interestSimilarity.toFixed(4)}</strong>이지만, 학생의 <strong>${item.prereq} 성취수준(${item.prereqFullLabel})</strong>을 반영하여 가중치 <strong>×${item.weight.toFixed(2)}</strong>가 곱해져 최종 추천 점수가 <strong>${item.finalScore.toFixed(4)}점</strong>으로 산출되었습니다.
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFullMatrixTable(evaluated) {
+            const tbody = document.getElementById("fullMatrixTableBody");
+            const sorted = [...evaluated].sort((a, b) => b.finalScore - a.finalScore);
+
+            tbody.innerHTML = sorted.map(item => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="py-2.5 px-3">
+                        <div class="flex items-center gap-1 flex-wrap">
+                            ${getCurriculumTagBadgeHTML(item.curriculumTag)}
+                        </div>
+                    </td>
+                    <td class="py-2.5 px-3 font-bold text-slate-800">${item.title}</td>
+                    <td class="py-2.5 px-3 text-slate-700 font-medium">
+                        ${item.prereq} <span class="text-xs font-bold text-indigo-700">(${item.prereqLevelLabel} · ${item.statusShort})</span>
+                    </td>
+                    <td class="py-2.5 px-3">
+                        <div class="flex flex-wrap gap-1">
+                            ${item.matchedTerms.map(t => `<span class="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-medium">#${t}</span>`).join("") || '<span class="text-slate-400">-</span>'}
+                        </div>
+                    </td>
+                    <td class="py-2.5 px-3 text-right font-mono text-slate-700">${item.interestSimilarity.toFixed(4)}</td>
+                    <td class="py-2.5 px-3 text-center">
+                        <span class="px-2 py-0.5 rounded text-[11px] font-bold ${item.badgeClass}">×${item.weight.toFixed(2)}</span>
+                    </td>
+                    <td class="py-2.5 px-3 text-right font-mono font-extrabold text-indigo-600">${item.finalScore.toFixed(4)}</td>
+                    <td class="py-2.5 px-3 text-center">
+                        <button onclick="deleteCourse(${item.id})" class="text-slate-400 hover:text-rose-600 transition-colors" title="삭제">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join("");
+        }
+
+        /***********************************************************************
+         * 7. TAB NAVIGATION & MODAL HANDLERS
+         ***********************************************************************/
+        function switchMainTab(tabName) {
+            ["chart", "math", "matrix"].forEach(t => {
+                const btn = document.getElementById(`tabBtn-${t}`);
+                const content = document.getElementById(`tabContent-${t}`);
+                if (t === tabName) {
+                    btn.className = "px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-xl border-b-2 border-indigo-600 text-indigo-600 bg-white transition-all flex items-center gap-2";
+                    content.classList.remove("hidden");
+                } else {
+                    btn.className = "px-4 py-2.5 text-xs sm:text-sm font-semibold rounded-t-xl border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition-all flex items-center gap-2";
+                    content.classList.add("hidden");
+                }
+            });
+
+            const chartFilterGroup = document.getElementById("chartFilterGroup");
+            chartFilterGroup.style.display = tabName === "chart" ? "flex" : "none";
+        }
+
+        function openCourseModal() {
+            const modal = document.getElementById("addCourseModal");
+            modal.classList.remove("hidden");
+            modal.classList.add("flex");
+        }
+
+        function closeCourseModal() {
+            const modal = document.getElementById("addCourseModal");
+            modal.classList.add("hidden");
+            modal.classList.remove("flex");
+        }
+
+        function syncDifficultyWithType() {
+            const type = document.getElementById("newCourseType").value;
+            const diffSelect = document.getElementById("newCourseDifficulty");
+            const tagSelect = document.getElementById("newCourseCurriculumTag");
+            if (type === "선택과목") {
+                diffSelect.value = "심화";
+                if (tagSelect.value === "공통과목 보충") tagSelect.value = "진로선택";
+            } else {
+                diffSelect.value = "기초";
+                tagSelect.value = "공통과목 보충";
+            }
+        }
+
+        function handleAddCourse(e) {
+            e.preventDefault();
+            const title = document.getElementById("newCourseTitle").value.trim();
+            const type = document.getElementById("newCourseType").value;
+            const curriculumTag = document.getElementById("newCourseCurriculumTag").value;
+            const prereq = document.getElementById("newCoursePrereq").value;
+            const difficulty = document.getElementById("newCourseDifficulty").value;
+            const keywords = document.getElementById("newCourseKeywords").value.trim();
+
+            if (!title || !keywords) return;
+
+            const newId = Date.now();
+            coursesDB.push({
+                id: newId,
+                title,
+                type,
+                curriculumTag,
+                prereq,
+                difficulty,
+                keywords
+            });
+
+            // Reset form & close modal
+            document.getElementById("newCourseTitle").value = "";
+            document.getElementById("newCourseKeywords").value = "";
+            closeCourseModal();
+
+            runRecommendationEngine();
+            showToast(`'${title}' 과정이 데이터베이스에 추가되었습니다.`);
+        }
+
+        function deleteCourse(courseId) {
+            if (coursesDB.length <= 2) {
+                showToast("최소 2개 이상의 과정이 유지되어야 합니다.");
+                return;
+            }
+            const target = coursesDB.find(c => c.id === courseId);
+            coursesDB = coursesDB.filter(c => c.id !== courseId);
+            runRecommendationEngine();
+            if (target) {
+                showToast(`'${target.title}' 과정이 삭제되었습니다.`);
+            }
+        }
+
+        function resetToDefault() {
+            coursesDB = JSON.parse(JSON.stringify(INITIAL_COURSES_DB));
+            document.getElementById("studentNameInput").value = "김탐구";
+            document.getElementById("studentKeywordsInput").value = INITIAL_DEFAULT_KEYWORDS;
+
+            currentGradingMode = "ABCDE";
+            currentThresholdRank = GRADING_SYSTEMS.ABCDE.defaultThresholdRank;
+            studentSubjectRanks = { ...GRADING_SYSTEMS.ABCDE.defaultSubjectRanks };
+
+            ["ABCDE", "GRADE5", "GRADE9"].forEach(m => {
+                const btn = document.getElementById(`modeBtn-${m}`);
+                if (m === "ABCDE") {
+                    btn.className = "py-2 px-2 rounded-lg text-xs font-bold transition-all bg-white text-indigo-700 shadow-xs border border-slate-200/60";
+                } else {
+                    btn.className = "py-2 px-2 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900";
+                }
+            });
+            document.getElementById("currentSystemBadge").textContent = GRADING_SYSTEMS.ABCDE.badgeLabel;
+
+            activeCategoryId = "it_ai";
+            showAllCategories = false;
+            document.getElementById("toggleCategoryViewBtn").textContent = "전체 계열 한눈에 보기";
+
+            renderCategoryTabs();
+            renderKeywordChips();
+            renderStep2GradingUI();
+            runRecommendationEngine();
+            showToast("모든 데이터와 성취도 설정이 초기 상태로 복원되었습니다.");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById("toastMessage");
+            document.getElementById("toastText").textContent = msg;
+            toast.classList.remove("opacity-0");
+            toast.classList.add("opacity-100");
+            setTimeout(() => {
+                toast.classList.remove("opacity-100");
+                toast.classList.add("opacity-0");
+            }, 2600);
+        }
+
+        // Initialize on Window Load
+        window.onload = function() {
+            document.getElementById("studentKeywordsInput").value = INITIAL_DEFAULT_KEYWORDS;
+            renderCategoryTabs();
+            renderKeywordChips();
+            renderStep2GradingUI();
+            runRecommendationEngine();
+        };
+    </script>
+</body>
+</html>
+```
